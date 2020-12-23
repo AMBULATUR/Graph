@@ -60,7 +60,8 @@ namespace Graph
         private void Clear(object obj)
         {
             var s = Model.Series;
-            foreach (OxyPlot.Series.LineSeries serie in s)
+             foreach (OxyPlot.Series.LineSeries serie in s)
+            //foreach (OxyPlot.Series.ScatterSeries serie in s)
             {
                 serie.Points.Clear();
             }
@@ -96,8 +97,8 @@ namespace Graph
         {
             this.timer.Change(Timeout.Infinite, Timeout.Infinite);
             this.Model = new PlotModel() { Title = "Online", };
-            this.Model.Series.Add(new OxyPlot.Series.LineSeries { LineStyle = LineStyle.Solid });
-
+            this.Model.Series.Add(new OxyPlot.Series.LineSeries { LineStyle = LineStyle.Dot });
+           // this.Model.Series.Add(new OxyPlot.Series.ScatterSeries { MarkerType = MarkerType.Circle });
             this.RaisePropertyChanged("Model");
             var axes = this.Model.Axes;
             axes[1].Maximum = 10;
@@ -118,12 +119,15 @@ namespace Graph
         }
         private void Update()
         {
-            var s = (OxyPlot.Series.LineSeries)Model.Series[0];
+             var s = (OxyPlot.Series.LineSeries)Model.Series[0];
+            //var s = (OxyPlot.Series.ScatterSeries)Model.Series[0];
             string message;
             while (queu.TryDequeue(out message))
             {
                 var split = message.Split('|');
-                s.Points.Add(new DataPoint(Double.Parse(split[0], CultureInfo.InvariantCulture), Double.Parse(split[1], CultureInfo.InvariantCulture)));
+                // s.Points.Add(new ScatterPoint(Double.Parse(split[0], CultureInfo.InvariantCulture), Double.Parse(split[1], CultureInfo.InvariantCulture)));
+
+                 s.Points.Add(new DataPoint(Double.Parse(split[0], CultureInfo.InvariantCulture), Double.Parse(split[1], CultureInfo.InvariantCulture)));
             }
         }
         public event PropertyChangedEventHandler PropertyChanged;
@@ -144,17 +148,22 @@ namespace Graph
             this.Model.ResetAllAxes();
             var serie1 = Series.Find((x) => x.Id == XIndex);
             var serie2 = Series.Find((x) => x.Id == YIndex);
-            var lineSeries1 = new OxyPlot.Series.LineSeries()
+            //var lineSeries1 = new OxyPlot.Series.LineSeries();
+            // var lineSeries1 = new OxyPlot.Series.ScatterSeries();
+            var lineSeries1 = new OxyPlot.Series.ScatterSeries()
             {
-                //  InterpolationAlgorithm = InterpolationAlgorithms.CanonicalSpline,
+            
             };
+           // {//  InterpolationAlgorithm = InterpolationAlgorithms.CanonicalSpline,};
+             
             for (int i = 0; i < serie1.Values.Count; i++)
             {
                 try
                 {
                     var x = double.Parse((string)serie1.Values[i], CultureInfo.InvariantCulture);
                     var y = double.Parse((string)serie2.Values[i], CultureInfo.InvariantCulture);
-                    lineSeries1.Points.Add(new DataPoint(x, y));
+                    lineSeries1.Points.Add(new ScatterPoint(x, y));
+                   // lineSeries1.Points.Add(new DataPoint(x, y));
                 }
                 catch
                 {
