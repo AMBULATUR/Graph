@@ -16,6 +16,7 @@
         </Grid.RowDefinitions>
         <GroupBox>
             <StackPanel Orientation="Horizontal">
+                <CheckBox Content="Binary" IsChecked="{Binding Path=isBinary, Mode=TwoWay}"></CheckBox>
                 <Button Content="Load" Command="{Binding LoadCommand}"></Button>
                 <Label Content="O[X]"></Label>
                 <ComboBox ItemsSource="{Binding ValueNames}" SelectedIndex="{Binding XIndex, Mode=TwoWay}"></ComboBox>

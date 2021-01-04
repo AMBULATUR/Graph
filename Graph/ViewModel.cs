@@ -43,9 +43,11 @@ namespace Graph
 
         private const int UpdateInterval = 20;
         private readonly Timer timer;
+        public bool isBinary { get; set; }
 
         public ViewModel()
         {
+            isBinary = true;
             LoadCommand = new DelegateCommand(Load);
             DrawCommand = new DelegateCommand(Draw);
             ListenCommand = new DelegateCommand(ListenPlot);
@@ -55,6 +57,7 @@ namespace Graph
             Series = new List<Serie>();
             this.Model = new PlotModel { Title = "Graph" };
             this.timer = new Timer(OnTimerElapsed);
+            //load,draw,listen
         }
 
         private void Clear(object obj)
@@ -97,7 +100,7 @@ namespace Graph
         {
             this.timer.Change(Timeout.Infinite, Timeout.Infinite);
             this.Model = new PlotModel() { Title = "Online", };
-            this.Model.Series.Add(new OxyPlot.Series.LineSeries { LineStyle = LineStyle.Dot });
+            this.Model.Series.Add(new OxyPlot.Series.LineSeries { LineStyle = LineStyle.Solid });
            // this.Model.Series.Add(new OxyPlot.Series.ScatterSeries { MarkerType = MarkerType.Circle });
             this.RaisePropertyChanged("Model");
             var axes = this.Model.Axes;
@@ -126,7 +129,7 @@ namespace Graph
             {
                 var split = message.Split('|');
                 // s.Points.Add(new ScatterPoint(Double.Parse(split[0], CultureInfo.InvariantCulture), Double.Parse(split[1], CultureInfo.InvariantCulture)));
-
+                 if(Double.Parse(split[1], CultureInfo.InvariantCulture) <5)
                  s.Points.Add(new DataPoint(Double.Parse(split[0], CultureInfo.InvariantCulture), Double.Parse(split[1], CultureInfo.InvariantCulture)));
             }
         }
@@ -148,26 +151,36 @@ namespace Graph
             this.Model.ResetAllAxes();
             var serie1 = Series.Find((x) => x.Id == XIndex);
             var serie2 = Series.Find((x) => x.Id == YIndex);
-            //var lineSeries1 = new OxyPlot.Series.LineSeries();
+           var lineSeries1 = new OxyPlot.Series.LineSeries();
             // var lineSeries1 = new OxyPlot.Series.ScatterSeries();
-            var lineSeries1 = new OxyPlot.Series.ScatterSeries()
-            {
+            //var lineSeries1 = new OxyPlot.Series.ScatterSeries()
+            //{
             
-            };
+            //};
            // {//  InterpolationAlgorithm = InterpolationAlgorithms.CanonicalSpline,};
-             
+          
             for (int i = 0; i < serie1.Values.Count; i++)
             {
                 try
                 {
-                    var x = double.Parse((string)serie1.Values[i], CultureInfo.InvariantCulture);
-                    var y = double.Parse((string)serie2.Values[i], CultureInfo.InvariantCulture);
-                    lineSeries1.Points.Add(new ScatterPoint(x, y));
-                   // lineSeries1.Points.Add(new DataPoint(x, y));
+                    double x = 0;
+                    double y = 0;
+                    if (isBinary)
+                    {
+                         y = Convert.ToDouble(serie2.Values[i]);
+                         x = Convert.ToDouble(serie1.Values[i]);
+                    }
+                    else
+                    {
+                         x = double.Parse((string)serie1.Values[i], CultureInfo.InvariantCulture);
+                         y = double.Parse((string)serie2.Values[i], CultureInfo.InvariantCulture);
+                    }
+                        //lineSeries1.Points.Add(new ScatterPoint(x, y));
+                    lineSeries1.Points.Add(new DataPoint(x, y));
                 }
-                catch
+                catch(Exception ex)
                 {
-                    MessageBox.Show($"Can't combine {serie1.Name} and {serie2.Name}");
+                    MessageBox.Show($"Can't combine {serie1.Name} and {serie2.Name} becouse {ex.Message}");
                     return;
                 }
             }
@@ -176,21 +189,45 @@ namespace Graph
         }
         private void Load(object obj)
         {
+            
             ValueNames.Clear();
             Series.Clear();
             var path = OpenFileDialog();
             if (!String.IsNullOrEmpty(path))
             {
-                var lines = File.ReadAllLines(path);
-
-                for (int i = 0; i < lines.Count(); i++)
+                if (isBinary)
                 {
-                    for (int j = 0; j < lines[i].Split(',').Count(); j++)
+                    List<ushort> BinaryData = new List<ushort>();
+                    using (BinaryReader reader = new BinaryReader(File.Open("G:\\DataLog_1.txt", FileMode.Open)))
+                        while (reader.BaseStream.Position != reader.BaseStream.Length)
+                        {
+                            BinaryData.Add(reader.ReadUInt16());
+                        }
+                    Series.Add(new Serie(0,"Values"));
+                    Series.Add(new Serie(1, "Count"));
+                    foreach (var item in BinaryData)
                     {
-                        if (i == 0)
-                            Series.Add(new Serie(j, lines[i].Split(',')[j]));
-                        else
-                            Series.Find(x => x.Id == j).Values.Add(lines[i].Split(',')[j]);
+                        Series.Find(x => x.Id == 0).Values.Add(item);
+                    }
+                    for (int i = 0; i < BinaryData.Count; ++i)
+                    {
+                        Series.Find(x => x.Id == 1).Values.Add(i);
+                    }
+                    //0 serii , 1 enumarte
+                }
+                else
+                {
+                    var lines = File.ReadAllLines(path);
+                    for (int i = 0; i < lines.Count(); i++)
+                    {
+
+                        for (int j = 0; j < lines[i].Split('|').Count(); j++)
+                        {
+                            if (i == 0)
+                                Series.Add(new Serie(j, lines[i].Split('|')[j]));
+                            else
+                                Series.Find(x => x.Id == j).Values.Add(lines[i].Split('|')[j]);
+                        }
                     }
                 }
             }
